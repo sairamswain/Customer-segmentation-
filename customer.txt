@@ -1,0 +1,192 @@
+#Importing Libraries:
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+#Reading the Dataset:
+df=pd.read_csv('D:Mall_Customers.csv')
+
+#Printing Information about the Dataset:
+print(df.head(10))
+print(df.info())
+
+#Calculating Mean Annual Income by Gender:
+print("Mean of Annual Income (k$) of Female:",df['Annual Income (k$)'].loc[df['Gender'] == 'Female'].mean())
+print("Mean of Annual Income (k$) of Male:",df['Annual Income (k$)'].loc[df['Gender'] == 'Male'].mean())
+
+#Grouping Data by Gender:
+df.groupby('Gender').mean()
+
+#Plotting Distribution Plots:
+# Plotting Distribution Plots:
+plt.figure(figsize=(14, 5))
+plt.subplot(1, 3, 1)
+sns.distplot(df['Age'])
+plt.title('Distplot of Age')
+
+plt.subplot(1, 3, 2)
+sns.distplot(df['Spending Score (1-100)'], hist=False)
+plt.title('Distplot of Spending Score (1-100)')
+
+plt.subplot(1, 3, 3)
+sns.distplot(df['Annual Income (k$)'])
+plt.title('Annual Income (k$)')
+
+plt.tight_layout()  # Adjust layout to prevent overlap
+
+# Save the figure
+plt.savefig('distribution_plots.png')
+plt.show()
+
+
+plt.figure(figsize=(14,5))
+plt.subplot(1,3,1)
+sns.distplot(df['Age'])
+plt.title('Distplot of Age')
+plt.show()
+
+plt.subplot(1,3,2)
+sns.distplot(df['Spending Score (1-100)'],hist=False)
+plt.title('Distplot of Spending Score (1-100)')
+plt.show()
+
+plt.subplot(1,3,3)
+sns.distplot(df['Annual Income (k$)'])
+plt.title('Annual Income (k$)')
+plt.show()
+
+#plotting graph according to gender
+sns.pairplot(df, vars = ['Spending Score (1-100)', 'Annual Income (k$)', 'Age'], hue = "Gender")
+plt.show()
+
+plt.figure(1 , figsize = (15 , 7))
+plt.title('Scatter plot of Age v/s Spending Score', fontsize = 20)
+plt.xlabel('Age')
+plt.ylabel('Spending Score')
+plt.scatter( x = 'Age', y = 'Spending Score (1-100)', data = df, s = 100)
+plt.show()
+
+# Gender distribution
+gender = df['Gender'].value_counts()
+sns.set_style("darkgrid")
+plt.figure(figsize=(10,4))
+sns.barplot(x=gender.index, y=gender.values)
+plt.show()
+
+# Defining Features for Clustering
+X = df[['Annual Income (k$)', 'Spending Score (1-100)']]
+
+# Scatterplot of the input data
+plt.figure(figsize=(10,6))
+sns.scatterplot(x='Annual Income (k$)', y='Spending Score (1-100)', data=X, s=60)
+plt.xlabel('Annual Income (k$)')
+plt.ylabel('Spending Score (1-100)') 
+plt.title('Spending Score (1-100) vs Annual Income (k$)')
+plt.show()
+
+# Defining Features for Clustering
+X = df[['Annual Income (k$)', 'Spending Score (1-100)']]
+
+# Elbow Method for K-Means:
+from sklearn.cluster import KMeans
+wcss=[]
+for i in range(1,11):
+    kmeans=KMeans(n_clusters=i,init='k-means++',max_iter=300,n_init=10,random_state=0)
+    kmeans.fit(X)
+    wcss.append(kmeans.inertia_)
+plt.plot(range(1,11),wcss)
+plt.title('Elbow Curve')
+plt.show()
+
+# Importing KMeans
+from sklearn.cluster import KMeans
+
+# Defining Features for Clustering
+X = df[['Annual Income (k$)', 'Spending Score (1-100)']]
+
+# K-Means Clustering
+cluster = int(input("How Many Clusters You want: "))
+kmeans = KMeans(n_clusters=cluster, init='k-means++', max_iter=300, n_init=10, random_state=0)
+y_kmeans = kmeans.fit_predict(X)
+
+
+# Visualizing all the clusters 
+plt.figure(figsize=(8, 5))
+for i in range(cluster):
+    plt.scatter(X.iloc[y_kmeans == i, 0], X.iloc[y_kmeans == i, 1], s=100, label=f'Cluster {i+1}')
+plt.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], s=300, c='black', label='Centroids')
+plt.title('Clusters of customers')
+plt.xlabel('Annual Income (k$)')
+plt.ylabel('Spending Score (1-100)')
+plt.legend()
+plt.show()
+
+
+
+X3 = df[['Age' , 'Annual Income (k$)' ,'Spending Score (1-100)']].iloc[: , :].values
+inertia = []
+for n in range(1 , 11):
+    algorithm = (KMeans(n_clusters = n, init='k-means++', n_init = 10, max_iter=300, 
+                        tol=0.0001, random_state= 111, algorithm='elkan'))
+    algorithm.fit(X3)
+    inertia.append(algorithm.inertia_)
+    
+plt.figure(1 , figsize = (15 ,6))
+plt.plot(np.arange(1 , 11) , inertia , 'o')
+plt.plot(np.arange(1 , 11) , inertia , '-' , alpha = 0.5)
+plt.xlabel('Number of Clusters') , plt.ylabel('Inertia')
+plt.show()
+
+algorithm = (KMeans(n_clusters = 6 ,init='k-means++', n_init = 10 ,max_iter=300, 
+                        tol=0.0001,  random_state= 111  , algorithm='elkan') )
+algorithm.fit(X3)
+labels3 = algorithm.labels_
+centroids3 = algorithm.cluster_centers_
+
+y_kmeans = algorithm.fit_predict(X3)
+df['cluster'] = pd.DataFrame(y_kmeans)
+df.head()
+
+import plotly as py
+import plotly.graph_objs as go
+
+trace1 = go.Scatter3d(
+    x= df['Age'],
+    y= df['Spending Score (1-100)'],
+    z= df['Annual Income (k$)'],
+    mode='markers',
+     marker=dict(
+        color = df['cluster'], 
+        size= 10,
+        line=dict(
+            color= df['cluster'],
+            width= 12
+        ),
+        opacity=0.8
+     )
+)
+data = [trace1]
+layout = go.Layout(
+    title= 'Clusters wrt Age, Income and Spending Scores',
+    scene = dict(
+            xaxis = dict(title  = 'Age'),
+            yaxis = dict(title  = 'Spending Score'),
+            zaxis = dict(title  = 'Annual Income')
+        )
+)
+fig = go.Figure(data=data, layout=layout)
+py.offline.iplot(fig)      
+
+
+# 3D Plot as we did the clustering on the basis of 3 input features
+fig = plt.figure(figsize=(20, 10))
+ax = fig.add_subplot(111, projection='3d')
+for i in range(cluster):
+    ax.scatter(df.Age[df['cluster'] == i], df["Annual Income (k$)"][df['cluster'] == i], df["Spending Score (1-100)"][df['cluster'] == i], s=60, label=f'Cluster {i+1}')
+plt.xlabel("Age")
+plt.ylabel("Annual Income (k$)")
+ax.set_zlabel('Spending Score (1-100)')
+plt.legend()
+plt.show()
+
